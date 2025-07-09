@@ -38,7 +38,7 @@ export function Select({cameras}:props) {
         //   variant='default'
           role="combobox"
           aria-expanded={open}
-          className="bg-white text-gray-800 pl-[-10px] hover:bg-white flex justify-start p-0"
+          className="bg-white text-gray-800 pl-[-10px] hover:bg-white flex justify-start items-center p-0"
         >
           {value
             ? cameras.find((camera) => camera.value === value)?.label
@@ -46,9 +46,9 @@ export function Select({cameras}:props) {
           <ChevronsUpDown className="opacity-50" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[100px] p-0">
-        <Command>
-          <CommandInput placeholder="Search camera" className="h-8 pl-0" />
+      <PopoverContent className="w-[125px] rounded-none p-0">
+        <Command className="mt-[-2px]">
+          <CommandInput placeholder="Search camera" className="h-8" />
           <CommandList>
             <CommandEmpty>No framework found.</CommandEmpty>
             <CommandGroup>

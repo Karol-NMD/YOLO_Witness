@@ -29,15 +29,23 @@ export default function Dash() {
   return (
     <div className="flex w-full h-full overflow-hidden">
         <div className="flex items-center flex-col w-full">
-            <h1 className="text-3xl poppins-bold text-center w-full ">Dashboard</h1>
-            <p className="text-2xs w-full text-center mt-[-6px] text-neutral-100">verifier la camera que vous souhaitez avec plus de precision</p>
-            <div className="flex w-[90%] h-18 px-2 shadow">
+            <h1 className="text-3xl poppins-bold text-center">Dashboard</h1>
+            <p className="text-2xs w-full text-center mt-[-14px] mb-2 text-sky-300">verifier la camera que vous souhaitez avec plus de precision</p>
+            <div className="flex justify-between w-[90%] h-18 px-2 shadow bg-white opacity-200 *:text-xs *:uppercase  poppins-bold">
                 <div className="flex flex-col gap-1 h-full justify-around pl-2 items-start">
                     <label htmlFor="lieux">camera :</label>
                     <Select cameras={cameras} />
                 </div>
+                <div className="flex flex-col gap-1 h-full justify-around pl-2 items-start">
+                    <label htmlFor="lieux">vitesse :</label>
+                    <Select cameras={cameras} />
+                </div>
+                <div className="flex flex-col gap-1 h-full justify-around pl-2 items-start">
+                    <label htmlFor="lieux">Zoom:</label>
+                    <Select cameras={cameras} />
+                </div>
             </div>
-            <div className="flex shadow w-[90%] h-full my-2">
+            <div className="flex shadow w-[90%] h-full my-2 bg-white">
                 <video src="" className="w-full h-full"></video>
             </div>
         </div>

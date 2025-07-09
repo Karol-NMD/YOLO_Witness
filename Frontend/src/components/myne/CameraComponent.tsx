@@ -1,11 +1,15 @@
 import { Card, CardContent } from "@/components/ui/card";
+import ReactPlayer from 'react-player'
 
-export default function CameraComponent() {
+type props = {
+  image: string
+}
+export default function CameraComponent({image}:props) {
   return (
-    <Card className="w-[475px] h-[300px] bg-sky-300">
-        <CardContent className=" h-full w-full">
-          <video src="/"></video>
-        </CardContent>
-    </Card>
+    <div className="w-[475px] h-[300px] p-0">
+        <div className=" h-full w-full">
+          <ReactPlayer src={image} />
+        </div>
+    </div>
   )
 }

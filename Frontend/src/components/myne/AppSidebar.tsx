@@ -91,22 +91,22 @@ import {
 const items = [
   {
     title: "Camera",
-    url: "camera",
+    url: "/control/camera",
     icon: Camera,
   },
   {
     title: "dashboard",
-    url: "dashboard",
+    url: "/control/dashboard",
     icon: LayoutDashboard,
   },
   {
     title: "export",
-    url: "export",
+    url: "/control/export",
     icon: Share,
   },
   {
     title: "profil",
-    url: "profil",
+    url: "/control/profil",
     icon: User,
   },
 ]
@@ -114,9 +114,9 @@ const items = [
 export function AppSidebar() {
   return (
     <Sidebar className="z-20">
-      <SidebarContent className="bg-blue-500 shadow-2xl justify-between pb-2 pl-2">
+      <SidebarContent className="bg-white shadow-2xl justify-between pb-2 pl-2">
         <SidebarGroup className="pl-0">
-          <SidebarGroupLabel className="h-20 justify-center"><img src="/LogoWitness2.png" alt="image"className="h-40 w-40"/></SidebarGroupLabel>
+          <SidebarGroupLabel className="h-20"><img src="/LogoWitness2.png" alt="image"className="h-40 w-40 scale-130"/></SidebarGroupLabel>
           <SidebarGroupContent className="mt-5 poppins-bold uppercase">
             <SidebarMenu>
               {items.map((item) => (

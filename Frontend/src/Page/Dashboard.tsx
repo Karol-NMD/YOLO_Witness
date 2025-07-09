@@ -8,7 +8,7 @@ export default function Dashboard() {
   return (
     <SidebarProvider className="flex border border-black">
       <AppSidebar />
-      <main className="flex flex-col w-full flex-grow">
+      <main className="flex flex-col w-full flex-grow bg-sky-50">
         <header className="w-full flex justify-between ml-[-2px]">
             <SidebarTrigger />
             <div className="flex justify-between items-center pr-1 gap-2 w-20">
