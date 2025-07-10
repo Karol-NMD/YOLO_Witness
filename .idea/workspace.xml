@@ -5,11 +5,21 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="be2b48d8-b2f5-4f86-ae93-3194c4318f20" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/Witness Backend.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Witness Backend.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Frontend/src/Page/Log.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Frontend/src/Page/Profil.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Frontend/src/components/myne/Password.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/package.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Frontend/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/App.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/Page/Dashboard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/Page/Dashboard.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Frontend/src/Page/Dashboard/Acceuil.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/Page/Dashboard/Acceuil.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/Page/Dashboard/Dash.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/Page/Dashboard/Dash.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/Page/Dashboard/Export.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/Page/Dashboard/Export.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Frontend/src/components/myne/AppSidebar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/components/myne/AppSidebar.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/myne/CameraAddComponent.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/components/myne/CameraAddComponent.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/myne/CameraComponent.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/components/myne/CameraComponent.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Frontend/src/components/myne/Select.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/components/myne/Select.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -25,6 +35,11 @@
     </option>
   </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="2-andy" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="MarkdownSettingsMigration">
@@ -46,7 +61,7 @@
     "ASKED_ADD_EXTERNAL_FILES": "true",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "1-link-frontend-with-backend",
+    "git-widget-placeholder": "Merging 1-link-frontend-with-backend",
     "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
   }
 }]]></component>
