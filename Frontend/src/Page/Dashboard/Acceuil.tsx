@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { get } from "http";
-import { ChangeEvent, FormEvent, useState } from "react"; // Importation de FormEvent pour le typage de l'événement de soumission
+import { ChangeEvent, FormEvent, useEffect, useState } from "react"; // Importation de FormEvent pour le typage de l'événement de soumission
 
 export default function Acceuil() {
   // États pour les champs du formulaire
@@ -21,8 +21,14 @@ export default function Acceuil() {
   // États pour le feedback utilisateur et le chargement
   const [message, setMessage] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [ listeData, setListeData] = useState<string[]>([])
-
+  // localStorage.clear()
+  const [listeData, setListeData] = useState<string[]>(() => {
+    const saved = localStorage.getItem('listeData')
+    return saved ? JSON.parse(saved) : [];
+  })
+  useEffect(() => {
+    localStorage.setItem('listeData',JSON.stringify(listeData))
+  },[listeData])
   // Fonctions de gestion des changements pour les inputs
   const handleLieux = (e: ChangeEvent<HTMLInputElement>) => {
     setLieux(e.target.value);
@@ -47,7 +53,7 @@ export default function Acceuil() {
       // The URL of your FastAPI endpoint for adding a camera
       const apiUrl = "http://127.0.0.1:8000/api/add_camera";
       
-      console.log("andy");
+      // console.log("andy");
 
       // Perform the POST request
       fetch(apiUrl, {
@@ -55,7 +61,8 @@ export default function Acceuil() {
         headers: {
           "Content-Type": "application/json", // Tell the server that you're sending JSON
         },
-        body: JSON.stringify(requestBody), // Convert your JavaScript object to a JSON string
+        body: JSON.stringify({ip_address:`${url}`,Label:`${lieux}`}), 
+        // body: JSON.stringify(requestBody), // Convert your JavaScript object to a JSON string
       })
         .then((response) => {
           // Check if the response was successful (status code 2xx)
@@ -82,10 +89,12 @@ export default function Acceuil() {
           console.error("Error adding camera:", error.message);
           // You can display an error message to the user here
         });
-      
-        const apiurl = await fetch(`http://127.0.0.1:8000/stream/${requestBody.label}`)
-        listeData.push(apiurl.url)
-        console.log(apiurl)
+   
+        const apiurl = await fetch(`http://127.0.0.1:8000/stream/${requestBody.label}`);
+        setListeData(prev => [...prev, apiurl.url]);
+        console.log('andy est le meilleur');
+        console.log(listeData);
+        console.log(apiurl);
 
     } catch (err) {
       console.error("votre erreur est :", err);

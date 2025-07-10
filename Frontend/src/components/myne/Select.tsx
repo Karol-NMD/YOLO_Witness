@@ -21,13 +21,14 @@ import {
 
 type props = {
     cameras: cameraOption[];
+    valeurSelect: (valeur: string) => void
 }
 type cameraOption = {
     value: string,
     label: string,
 }
 
-export function Select({cameras}:props) {
+export function Select({cameras, valeurSelect}:props) {
   const [open, setOpen] = React.useState(false)
   const [value, setValue] = React.useState("")
 
@@ -59,6 +60,7 @@ export function Select({cameras}:props) {
                   onSelect={(currentValue) => {
                     setValue(currentValue === value ? "" : currentValue)
                     setOpen(false)
+                    valeurSelect(currentValue)
                   }}
                 >
                   {camera.label}

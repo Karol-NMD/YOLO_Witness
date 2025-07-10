@@ -1,6 +1,7 @@
 import { Select } from "@/components/myne/Select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useEffect, useState } from "react";
 
 
 const cameras = [
@@ -24,8 +25,32 @@ const cameras = [
         value: "Dc",
         label: "Dc",
     },
+    {
+        value: "TestCam",
+        label: "TestCam",
+    },
 ]
 export default function Dash() {
+    const [label, setLabel] = useState<string>('')
+    const [url, setUrl] = useState<string>('');
+    const recevoirValeur = (val: string) => {
+        setLabel(val);
+    };
+    localStorage.clear()
+    const [video, setVideo] = useState<string[]>(() => {
+        const Label = localStorage.getItem('video')
+        return Label ? JSON.parse(Label) : []
+    })
+    console.log(label);
+    useEffect(() => {
+        localStorage.setItem('video',JSON.stringify(video));
+        const Voir = async() => {
+            console.log(label);
+            const get = await fetch(`http://127.0.0.1:8000/stream/${label}`)
+            .then(res => console.log(res));           
+       }
+       Voir();
+    },[video])
   return (
     <div className="flex w-full h-full overflow-hidden">
         <div className="flex items-center flex-col w-full">
@@ -34,19 +59,19 @@ export default function Dash() {
             <div className="flex justify-between w-[90%] h-18 px-2 shadow bg-white opacity-200 *:text-xs *:uppercase  poppins-bold">
                 <div className="flex flex-col gap-1 h-full justify-around pl-2 items-start">
                     <label htmlFor="lieux">camera :</label>
-                    <Select cameras={cameras} />
+                    <Select cameras={cameras} valeurSelect={recevoirValeur} />
                 </div>
                 <div className="flex flex-col gap-1 h-full justify-around pl-2 items-start">
                     <label htmlFor="lieux">vitesse :</label>
-                    <Select cameras={cameras} />
+                    <Select cameras={cameras} valeurSelect={recevoirValeur} />
                 </div>
                 <div className="flex flex-col gap-1 h-full justify-around pl-2 items-start">
                     <label htmlFor="lieux">Zoom:</label>
-                    <Select cameras={cameras} />
+                    <Select cameras={cameras} valeurSelect={recevoirValeur} />
                 </div>
             </div>
             <div className="flex shadow w-[90%] h-full my-2 bg-white">
-                <video src="" className="w-full h-full"></video>
+                <video src={url} className="w-full h-full"></video>
             </div>
         </div>
     </div>
