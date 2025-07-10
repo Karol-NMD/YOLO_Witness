@@ -11,8 +11,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* <Route path="/" element={<Home />} /> */}
-        <Route path="/control" element={<Dashboard />} >
+        <Route path="/" element={<Home />} />
+        <Route path="/control/" element={<Dashboard />} >
           <Route index path="camera" element={<Acceuil />}/>
           <Route path="dashboard" element={<Dash />}/>
           <Route path="export" element={<Export />}/>

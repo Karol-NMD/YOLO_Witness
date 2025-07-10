@@ -5,7 +5,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from backend.camera_manager import CameraManager
+from camera_manager import CameraManager
 import threading
 
 

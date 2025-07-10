@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function Acceuil() {
+useEffect(() => {
+    fetch("http://localhost:8000/api/add_camera")
+}, [])
   return (
     <div className="flex flex-col px-2 mt-2">
       <h2 className="text-end poppins-bold text-3xl">Vos Cameras</h2>

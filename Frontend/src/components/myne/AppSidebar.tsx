@@ -122,7 +122,7 @@ export function AppSidebar() {
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild className="hover:bg-sky-300">
-                    <a href={item.url}>
+                    <a href={`control/${item.url}`}>
                       <item.icon />
                       <span>{item.title}</span>
                     </a>
