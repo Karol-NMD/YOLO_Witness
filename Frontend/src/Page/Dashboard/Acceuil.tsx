@@ -90,7 +90,8 @@ export default function Acceuil() {
           // You can display an error message to the user here
         });
    
-        const apiurl = await fetch(`http://127.0.0.1:8000/stream/${requestBody.label}`);
+        const apiurl = await fetch(`http://127.0.0.1:8000/stream/${requestBody.label}`)
+        // .then(res => console.log(res));
         setListeData(prev => [...prev, apiurl.url]);
         console.log('andy est le meilleur');
         console.log(listeData);
@@ -164,7 +165,7 @@ export default function Acceuil() {
               <button
                 type="submit"
                 disabled={isLoading} // Désactive le bouton pendant le chargement pour éviter les soumissions multiples
-                className="bg-black text-white w-40 h-8 rounded-md poppins-bold mx-auto"
+                className="bg-black cursor-pointer text-white w-40 h-8 rounded-md poppins-bold mx-auto"
               >
                 {isLoading ? "Ajout en cours..." : "Ajouter"}
               </button>
