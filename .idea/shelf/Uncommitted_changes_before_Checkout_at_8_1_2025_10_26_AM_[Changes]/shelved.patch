@@ -1,0 +1,77 @@
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"AutoImportSettings\">\r\n    <option name=\"autoReloadType\" value=\"SELECTIVE\" />\r\n  </component>\r\n  <component name=\"ChangeListManager\">\r\n    <list default=\"true\" id=\"be2b48d8-b2f5-4f86-ae93-3194c4318f20\" name=\"Changes\" comment=\"\">\r\n      <change afterPath=\"$PROJECT_DIR$/Frontend/src/Page/Log.tsx\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/Frontend/src/Page/Profil.tsx\" afterDir=\"false\" />\r\n      <change afterPath=\"$PROJECT_DIR$/Frontend/src/components/myne/Password.tsx\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/.idea/workspace.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/workspace.xml\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/Frontend/package-lock.json\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/Frontend/package-lock.json\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/Frontend/package.json\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/Frontend/package.json\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/Frontend/src/App.tsx\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/Frontend/src/App.tsx\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/Frontend/src/Page/Dashboard.tsx\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/Frontend/src/Page/Dashboard.tsx\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/Frontend/src/Page/Dashboard/Acceuil.tsx\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/Frontend/src/Page/Dashboard/Acceuil.tsx\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/Frontend/src/Page/Dashboard/Dash.tsx\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/Frontend/src/Page/Dashboard/Dash.tsx\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/Frontend/src/Page/Dashboard/Export.tsx\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/Frontend/src/Page/Dashboard/Export.tsx\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/Frontend/src/components/myne/AppSidebar.tsx\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/Frontend/src/components/myne/AppSidebar.tsx\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/Frontend/src/components/myne/CameraAddComponent.tsx\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/Frontend/src/components/myne/CameraAddComponent.tsx\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/Frontend/src/components/myne/CameraComponent.tsx\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/Frontend/src/components/myne/CameraComponent.tsx\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/Frontend/src/components/myne/Select.tsx\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/Frontend/src/components/myne/Select.tsx\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/backend/main.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/backend/main.py\" afterDir=\"false\" />\r\n    </list>\r\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\r\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\r\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\r\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\r\n  </component>\r\n  <component name=\"FileTemplateManagerImpl\">\r\n    <option name=\"RECENT_TEMPLATES\">\r\n      <list>\r\n        <option value=\"Python Script\" />\r\n      </list>\r\n    </option>\r\n  </component>\r\n  <component name=\"Git.Settings\">\r\n    <option name=\"RECENT_BRANCH_BY_REPOSITORY\">\r\n      <map>\r\n        <entry key=\"$PROJECT_DIR$\" value=\"2-andy\" />\r\n      </map>\r\n    </option>\r\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\r\n  </component>\r\n  <component name=\"MarkdownSettingsMigration\">\r\n    <option name=\"stateVersion\" value=\"1\" />\r\n  </component>\r\n  <component name=\"ProjectColorInfo\">{\r\n  &quot;associatedIndex&quot;: 3\r\n}</component>\r\n  <component name=\"ProjectId\" id=\"2zXVs2wQRMI7YqxdSHfaXMPUfYQ\" />\r\n  <component name=\"ProjectLevelVcsManager\" settingsEditedManually=\"true\">\r\n    <ConfirmationsSetting value=\"2\" id=\"Add\" />\r\n  </component>\r\n  <component name=\"ProjectViewState\">\r\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\r\n    <option name=\"showLibraryContents\" value=\"true\" />\r\n  </component>\r\n  <component name=\"PropertiesComponent\"><![CDATA[{\r\n  \"keyToString\": {\r\n    \"ASKED_ADD_EXTERNAL_FILES\": \"true\",\r\n    \"RunOnceActivity.OpenProjectViewOnStart\": \"true\",\r\n    \"RunOnceActivity.ShowReadmeOnStart\": \"true\",\r\n    \"git-widget-placeholder\": \"Merging 1-link-frontend-with-backend\",\r\n    \"settings.editor.selected.configurable\": \"com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable\"\r\n  }\r\n}]]></component>\r\n  <component name=\"RecentsManager\">\r\n    <key name=\"MoveFile.RECENT_KEYS\">\r\n      <recent name=\"C:\\Users\\VICTUS\\Desktop\\Nanosatellites Mission Design\\AI VMS\\pythonProject\\backend\" />\r\n    </key>\r\n  </component>\r\n  <component name=\"SharedIndexes\">\r\n    <attachedChunks>\r\n      <set>\r\n        <option value=\"bundled-python-sdk-d68999036c7f-d3b881c8e49f-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-233.14475.56\" />\r\n      </set>\r\n    </attachedChunks>\r\n  </component>\r\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\r\n  <component name=\"TaskManager\">\r\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\r\n      <changelist id=\"be2b48d8-b2f5-4f86-ae93-3194c4318f20\" name=\"Changes\" comment=\"\" />\r\n      <created>1751877608901</created>\r\n      <option name=\"number\" value=\"Default\" />\r\n      <option name=\"presentableId\" value=\"Default\" />\r\n      <updated>1751877608901</updated>\r\n    </task>\r\n    <servers />\r\n  </component>\r\n  <component name=\"VcsManagerConfiguration\">\r\n    <option name=\"ADD_EXTERNAL_FILES_SILENTLY\" value=\"true\" />\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+--- a/.idea/workspace.xml	(revision 960ae4b6f747f605d5cfaa6922e30010de3016a8)
++++ b/.idea/workspace.xml	(date 1753898771022)
+@@ -5,21 +5,13 @@
+   </component>
+   <component name="ChangeListManager">
+     <list default="true" id="be2b48d8-b2f5-4f86-ae93-3194c4318f20" name="Changes" comment="">
+-      <change afterPath="$PROJECT_DIR$/Frontend/src/Page/Log.tsx" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/Frontend/src/Page/Profil.tsx" afterDir="false" />
+-      <change afterPath="$PROJECT_DIR$/Frontend/src/components/myne/Password.tsx" afterDir="false" />
++      <change afterPath="$PROJECT_DIR$/backend/coco.names" afterDir="false" />
++      <change afterPath="$PROJECT_DIR$/backend/yolov3.cfg" afterDir="false" />
++      <change afterPath="$PROJECT_DIR$/backend/yolov3.weights" afterDir="false" />
++      <change afterPath="$PROJECT_DIR$/backend/yolov8n.pt" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_7_10_2025_12_28_PM__Changes_.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_7_10_2025_12_28_PM__Changes_.xml" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/Frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/package-lock.json" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/Frontend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/package.json" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/Frontend/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/App.tsx" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/Frontend/src/Page/Dashboard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/Page/Dashboard.tsx" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/Frontend/src/Page/Dashboard/Acceuil.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/Page/Dashboard/Acceuil.tsx" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/Frontend/src/Page/Dashboard/Dash.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/Page/Dashboard/Dash.tsx" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/Frontend/src/Page/Dashboard/Export.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/Page/Dashboard/Export.tsx" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/Frontend/src/components/myne/AppSidebar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/components/myne/AppSidebar.tsx" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/Frontend/src/components/myne/CameraAddComponent.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/components/myne/CameraAddComponent.tsx" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/Frontend/src/components/myne/CameraComponent.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/components/myne/CameraComponent.tsx" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/Frontend/src/components/myne/Select.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/components/myne/Select.tsx" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/backend/camera_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/camera_manager.py" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/backend/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/main.py" afterDir="false" />
+     </list>
+     <option name="SHOW_DIALOG" value="false" />
+@@ -37,7 +29,7 @@
+   <component name="Git.Settings">
+     <option name="RECENT_BRANCH_BY_REPOSITORY">
+       <map>
+-        <entry key="$PROJECT_DIR$" value="2-andy" />
++        <entry key="$PROJECT_DIR$" value="dev" />
+       </map>
+     </option>
+     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+@@ -56,16 +48,21 @@
+     <option name="hideEmptyMiddlePackages" value="true" />
+     <option name="showLibraryContents" value="true" />
+   </component>
+-  <component name="PropertiesComponent"><![CDATA[{
+-  "keyToString": {
+-    "ASKED_ADD_EXTERNAL_FILES": "true",
+-    "RunOnceActivity.OpenProjectViewOnStart": "true",
+-    "RunOnceActivity.ShowReadmeOnStart": "true",
+-    "git-widget-placeholder": "Merging 1-link-frontend-with-backend",
+-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
++  <component name="PropertiesComponent">{
++  &quot;keyToString&quot;: {
++    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
++    &quot;Python.main.executor&quot;: &quot;Run&quot;,
++    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
++    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
++    &quot;git-widget-placeholder&quot;: &quot;1-link-frontend-with-backend&quot;,
++    &quot;last_opened_file_path&quot;: &quot;C:/Users/VICTUS/Desktop/Nanosatellites Mission Design/AI VMS/pythonProject/backend&quot;,
++    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
+   }
+-}]]></component>
++}</component>
+   <component name="RecentsManager">
++    <key name="CopyFile.RECENT_KEYS">
++      <recent name="C:\Users\VICTUS\Desktop\Nanosatellites Mission Design\AI VMS\pythonProject\backend" />
++    </key>
+     <key name="MoveFile.RECENT_KEYS">
+       <recent name="C:\Users\VICTUS\Desktop\Nanosatellites Mission Design\AI VMS\pythonProject\backend" />
+     </key>
