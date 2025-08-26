@@ -1,28 +1,14 @@
-// {
-//   "files": [],
-//   "references": [
-//     { "path": "./tsconfig.app.json" },
-//     { "path": "./tsconfig.node.json" }
-//   ],
-//    "compilerOptions": {
-//     "baseUrl": ".",
-//     "paths": {
-//       "@/*": ["./src/*"]
-//     }
-//   }
-// }
 {
   "compilerOptions": {
-    "target": "es2020",
+    "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
-    "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
-    "moduleResolution": "bundler", // Ou "node" pour les anciennes versions de Next.js
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
@@ -33,9 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"] // <-- C'EST LA LIGNE CRUCIALE
-    },
-    "baseUrl": "." // <-- IMPORTANT
+      "@/*": ["./*"]
+    }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]

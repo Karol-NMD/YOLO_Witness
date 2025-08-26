@@ -1,10 +1,12 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query
+from starlette.websockets import WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from camera_manager import CameraManager
 import multiprocessing
 import threading
+import asyncio
 import sys
 
 multiprocessing.set_executable(sys.executable)
@@ -47,14 +49,16 @@ def stop_all():
     return {"status": "All cameras stopped."}
 
 
-@app.websocket("ws/events")
+@app.websocket("/ws/events")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     cameras.add_client(websocket)
     try:
         while True:
-            await websocket.receive_text()
+            await asyncio.sleep(60)
     except WebSocketDisconnect:
+        pass
+    finally:
         cameras.remove_client(websocket)
 
 
