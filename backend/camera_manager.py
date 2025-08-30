@@ -1,11 +1,15 @@
+from datetime import datetime
 import numpy as np
 import threading
 import asyncio
+import sqlite3
 import base64
 import queue
 import json
 import time
 import cv2
+import csv
+import io
 import os
 
 from multiprocessing import Manager, Process
@@ -13,6 +17,13 @@ from ultralytics import YOLO
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TRACKER_YAML = os.path.join(BASE_DIR, "Ressources", "bytetrack.yaml")
+DB_PATH = os.path.join(BASE_DIR, "detections.db")
+
+
+def _now_local_strs():
+    """Return (date_str, time_str) in the machine's local timezone."""
+    t = datetime.now().astimezone()
+    return t.strftime("%Y-%m-%d"), t.strftime("%H:%M:%S")
 
 
 def camera_worker(
@@ -27,16 +38,23 @@ def camera_worker(
     conf_threshold=0.25,
     min_box_area=20 * 20,
     thumbnail_side=128,
+    imgsz=640,
+    live_flush_grabs=2,     # for RTSP/USB live streams, drop up to N old frames each tick
 ):
     print(f"[WORKER] Camera '{label}' connecting to {ip_address}")
     cap = cv2.VideoCapture(ip_address)
-    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+
+    # Smaller buffer for live streams helps keep latency low
+    try:
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    except Exception:
+        pass
 
     # Model in Ressources/
     model = YOLO(os.path.join("Ressources", "yolov8n.pt"))
 
     try:
-        _ = model.predict(np.zeros((640, 640, 3), dtype=np.uint8), imgsz=640, verbose=False)
+        _ = model.predict(np.zeros((imgsz, imgsz, 3), dtype=np.uint8), imgsz=imgsz, verbose=False)
     except Exception:
         pass
 
@@ -51,6 +69,11 @@ def camera_worker(
     is_file = isinstance(ip_address, str) and os.path.isfile(ip_address)
 
     while cap.isOpened():
+        # For live sources, optionally drop a couple of stale frames quickly to reduce lag
+        if not is_file and live_flush_grabs > 0:
+            for _ in range(live_flush_grabs):
+                cap.grab()
+
         ok_read, frame = cap.read()
         if not ok_read:
             if is_file:
@@ -66,18 +89,19 @@ def camera_worker(
                     source=frame,
                     persist=True,
                     tracker=TRACKER_YAML,
+                    imgsz=imgsz,
                     verbose=False,
                     stream=False,
                 )[0]
             else:
-                results = model.predict(source=frame, verbose=False, stream=False, tracker=None)[0]
+                results = model.predict(source=frame, imgsz=imgsz, verbose=False, stream=False, tracker=None)[0]
         except Exception as e:
             print(f"[WORKER] '{label}' track() error: {e}")
             try:
                 model.predictor.args.tracker = None
             except Exception:
                 pass
-            results = model.predict(source=frame, verbose=False, stream=False)[0]
+            results = model.predict(source=frame, imgsz=imgsz, verbose=False, stream=False)[0]
 
         # ---- Per-frame counts ----
         counts = {k: 0 for k in task_keys}
@@ -86,9 +110,9 @@ def camera_worker(
         boxes = getattr(results, "boxes", None)
         if boxes is not None and len(boxes) > 0:
             xyxy = boxes.xyxy  # Nx4
-            cls  = boxes.cls   # Nx1
+            cls = boxes.cls   # Nx1
             conf = boxes.conf  # Nx1
-            ids  = getattr(boxes, "id", None)  # Nx1 or None
+            ids = getattr(boxes, "id", None)  # Nx1 or None
 
             n = len(boxes)
             for i in range(n):
@@ -155,15 +179,16 @@ def camera_worker(
                 active_ids.add(tid)
 
                 # base event
-                utc_now = time.gmtime()
+                date_s, time_s = _now_local_strs()
+
                 base_evt = {
                     "type": cls_name,
                     "label": label,
                     "track_id": int(tid),
                     "confidence": c,
                     "bbox": [int(x1), int(y1), int(x2), int(y2)],
-                    "date": time.strftime("%Y-%m-%d", utc_now),
-                    "time": time.strftime("%H:%M:%S", utc_now),
+                    "date": date_s,
+                    "time": time_s,
                 }
 
                 # appear once with thumbnail; then update w/o thumbnail
@@ -193,14 +218,14 @@ def camera_worker(
         # schedule 'lost' for ids that vanished this frame (broadcaster grace-delays to 'disappear')
         lost_ids = prev_active_ids - active_ids
         if lost_ids:
-            utc_now = time.gmtime()
+            date_s, time_s = _now_local_strs()
             for tid in lost_ids:
                 event_queue.put({
                     "event": "lost",
                     "label": label,
                     "track_id": int(tid),
-                    "date": time.strftime("%Y-%m-%d", utc_now),
-                    "time": time.strftime("%H:%M:%S", utc_now),
+                    "date": date_s,
+                    "time": time_s,
                 })
 
         prev_active_ids = active_ids
@@ -216,7 +241,6 @@ def camera_worker(
     print(f"[WORKER] Camera '{label}' stopped.")
 
 
-
 class CameraManager:
     def __init__(self):
         manager = Manager()
@@ -227,7 +251,8 @@ class CameraManager:
         self.pending_disappears = manager.dict()
         self.event_queue = manager.Queue()  # NEW: Event transport queue
 
-        self.clients = set()  # ✅ NEW: WebSocket clients
+        self.clients = set()  # ✅ NEW: WebSocket clients /ws/events clients
+        self.count_clients = set()  # /ws/counts clients
         self.loop = asyncio.get_event_loop()
 
         # Event / tracker tuning
@@ -254,8 +279,33 @@ class CameraManager:
             'carton': (255, 165, 0)
         }
 
+        # ----- DB Setup -----
+        self._db_lock = threading.Lock()
+        self._db = sqlite3.connect(DB_PATH, check_same_thread=False)
+        self._db.execute("""
+        CREATE TABLE IF NOT EXISTS detections (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            label TEXT,
+            class TEXT,
+            track_id INTEGER,
+            confidence REAL,
+            x1 INTEGER, y1 INTEGER, x2 INTEGER, y2 INTEGER,
+            date TEXT, time TEXT,
+            event TEXT,      -- 'appear' | 'update' | 'disappear'
+            mime TEXT,
+            thumbnail_b64 TEXT
+            )
+        """)
+
+        # Helpful indexes for filtering
+        self._db.execute("CREATE INDEX IF NOT EXISTS idx_dt ON detections(date, time)")
+        self._db.execute("CREATE INDEX IF NOT EXISTS idx_label ON detections(label)")
+        self._db.execute("CREATE INDEX IF NOT EXISTS idx_class ON detections(class)")
+        self._db.commit()
+
         threading.Thread(target=self._event_broadcaster, daemon=True).start()
         threading.Thread(target=self._watchdog_loop, daemon=True).start()
+        threading.Thread(target=self._counts_publisher, daemon=True).start()
 
     def is_running(self, label):
         return label in self.processes and self.processes[label].is_alive()
@@ -265,6 +315,12 @@ class CameraManager:
 
     def remove_client(self, ws):
         self.clients.discard(ws)
+
+    def add_count_client(self, ws):
+        self.count_clients.add(ws)
+
+    def remove_count_client(self, ws):
+        self.count_clients.discard(ws)
 
     def broadcast_event(self, event: dict):
         try:
@@ -276,6 +332,16 @@ class CameraManager:
         except Exception as e:
             print(f"[ERROR] Broadcasting event: {e}")
 
+    def broadcast_counts(self, payload: dict):
+        try:
+            message = json.dumps(payload, ensure_ascii=False)
+            asyncio.run_coroutine_threadsafe(
+                self._broadcast_counts(message),
+                self.loop
+            )
+        except Exception as e:
+            print(f"[ERROR] Broadcasting counts: {e}")
+
     async def _broadcast(self, message: str):
         to_remove = set()
         for ws in self.clients:
@@ -285,6 +351,16 @@ class CameraManager:
                 to_remove.add(ws)
         for ws in to_remove:
             self.clients.remove(ws)
+
+    async def _broadcast_counts(self, message: str):
+        to_remove = set()
+        for ws in self.count_clients:
+            try:
+                await ws.send_text(message)
+            except Exception:
+                to_remove.add(ws)
+        for ws in to_remove:
+            self.count_clients.remove(ws)
 
     def start_camera(self, ip_address, label):
         if self.is_running(label):
@@ -367,6 +443,11 @@ class CameraManager:
         print(f"[INFO] Shutting down CameraManager...")
         self._running = False
         self.stop_all()
+        try:
+            with self._db_lock:
+                self._db.close()
+        except Exception:
+            pass
 
     def _watchdog_loop(self, timeout_sec=30):
         print(f"[WATCHDOG] Started. Timeout set to {timeout_sec} seconds.")
@@ -381,12 +462,29 @@ class CameraManager:
                     self.stop_camera(label)
             time.sleep(5)
 
+    def _counts_publisher(self, interval=0.5):
+        """Push live per-camera counts + totals to /ws/counts clients."""
+        while self._running:
+            snapshot = {}
+            totals = {}
+            ts = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S")
+            # collect
+            for label, counts in list(self.count_store.items()):
+                snapshot[label] = dict(counts)
+                for k, v in counts.items():
+                    totals[k] = totals.get(k, 0) + int(v)
+            payload = {"ts": ts, "per_camera": snapshot, "totals":totals}
+            if self.count_clients:
+                self.broadcast_counts(payload)
+            time.sleep(interval)
+
     def _event_broadcaster(self):
         """
                 Central event fanout thread.
                 - Converts 'lost' → delayed 'disappear' (grace window).
                 - Cancels pending disappear on 'appear'/'update'.
                 - Broadcasts events to all WS clients.
+                - Logs detection instances to SQLite (by default: 'appear' only).
                 """
         print("[EVENT LOOP] Broadcaster started.")
         grace = float(self.disappear_grace_sec)
@@ -399,13 +497,13 @@ class CameraManager:
                 for key, deadline in list(self.pending_disappears.items()):
                     if now >= deadline:
                         (label, tid) = key
-                        utc = time.gmtime(now)
+                        date_s, time_s = _now_local_strs()
                         self.broadcast_event({
                             "event": "disappear",
                             "label": label,
                             "track_id": int(tid),
-                            "date": time.strftime("%Y-%m-%d", utc),
-                            "time": time.strftime("%H:%M:%S", utc),
+                            "date": date_s,
+                            "time": time_s,
                         })
                         try:
                             del self.pending_disappears[key]
@@ -442,5 +540,117 @@ class CameraManager:
                 # Forward all other events (appear/update/explicit disappear)
                 self.broadcast_event(event)
 
+                # ----- DB logging policy -----
+                # Default: log only 'appear' rows (1 row per tracked object).
+                # Flip include_updates=True to also log every 'update'.
+                include_updates = False
+                if evt_type == "appear" or (include_updates and evt_type == "update"):
+                    self._db_log(event)
+
             except Exception as e:
                 print(f"[ERROR] Broadcasting event: {e}")
+
+    # ---------------- DB helpers & exports -----------------
+    def _db_log(self, event: dict):
+        """Insert one detection event into SQLite."""
+        try:
+            label = event.get("label", "")
+            cls = event.get("type", "")
+            track_id = int(event.get("track_id", -1))
+            conf = float(event.get("confidence", 0.0))
+            bbox = event.get("bbox") or [None, None, None, None]
+            x1, y1, x2, y2 = (int(b) if b is not None else None for b in bbox)
+            date = event.get("date", "")
+            time_s = event.get("time", "")
+            ev = event.get("event", "")
+            mime = event.get("mime", None)
+            thumb = event.get("thumbnail", None)
+
+            with self._db_lock:
+                self._db.execute(
+                    """INSERT INTO detections
+                                           (label, class, track_id, confidence, x1, y1, x2, y2, date, time,
+                                            event, mime, thumbnail_b64)
+                                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (label, cls, track_id, conf, x1, y1, x2, y2, date, time_s, ev, mime, thumb)
+                )
+                self._db.commit()
+        except Exception as e:
+            print(f"[DB] insert failed: {e}")
+
+    def query_detections(self, start=None, end=None, label=None, cls=None):
+        """Return list[dict] of detections filtered by date range/label/class."""
+        where = []
+        args = []
+        if start:
+            where.append("(date || ' ' || time) >= ?")
+            args.append(start)
+        if end:
+            where.append("(date || ' ' || time) <= ?")
+            args.append(end)
+        if label:
+            where.append("label = ?")
+            args.append(label)
+        if cls:
+            where.append("class = ?")
+            args.append(cls)
+        sql = ("SELECT id, label, class, track_id, confidence, x1, y1, x2, y2, date,"
+               " time, event, mime, thumbnail_b64 FROM detections")
+        if where:
+            sql += " WHERE " + " AND ".join(where)
+        sql += " ORDER BY date, time"
+
+        with self._db_lock:
+            cur = self._db.execute(sql, args)
+            cols = [d[0] for d in cur.description]
+            rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+        return rows
+
+    def export_csv_text(self, **filters):
+        rows = self.query_detections(**filters)
+        buf = io.StringIO()
+        writer = csv.writer(buf)
+        writer.writerow(
+            ["id", "label", "class", "track_id", "confidence", "x1", "y1", "x2", "y2", "date", "time", "event"])
+        for r in rows:
+            writer.writerow([
+                r["id"], r["label"], r["class"], r["track_id"], r["confidence"],
+                r["x1"], r["y1"], r["x2"], r["y2"], r["date"], r["time"], r["event"]
+            ])
+        return buf.getvalue()
+
+    def export_pdf_bytes(self, **filters):
+        """Create a very simple PDF table using reportlab if installed."""
+        try:
+            from reportlab.lib.pagesizes import A4
+            from reportlab.pdfgen import canvas
+            from reportlab.lib.units import cm
+        except Exception as e:
+            raise RuntimeError("reportlab not installed") from e
+
+        rows = self.query_detections(**filters)
+        packet = io.BytesIO()
+        c = canvas.Canvas(packet, pagesize=A4)
+        width, height = A4
+
+        title = "Detections Report"
+        c.setFont("Helvetica-Bold", 14)
+        c.drawString(2 * cm, height - 2 * cm, title)
+
+        c.setFont("Helvetica", 9)
+        y = height - 3 * cm
+        headers = ["date", "time", "label", "class", "track_id", "confidence"]
+        c.drawString(2 * cm, y, " | ".join(h.upper() for h in headers))
+        y -= 0.6 * cm
+
+        for r in rows:
+            line = f"{r['date']} | {r['time']} | {r['label']} | {r['class']} | {r['track_id']} | {r['confidence']:.2f}"
+            c.drawString(2 * cm, y, line[:120])
+            y -= 0.55 * cm
+            if y < 2 * cm:
+                c.showPage()
+                y = height - 2.5 * cm
+
+        c.showPage()
+        c.save()
+        return packet.getvalue()
