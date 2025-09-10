@@ -35,7 +35,7 @@ def camera_worker(
     colors,
     last_frame_time,
     event_queue,
-    conf_threshold=0.25,
+    conf_threshold=0.35,
     min_box_area=20 * 20,
     thumbnail_side=128,
     imgsz=640,
@@ -81,6 +81,13 @@ def camera_worker(
                 continue
             print(f"[WORKER] Camera '{label}': Frame read failed or end of stream.")
             break
+
+        # ⚠️ NEW: Downscale the frame to a manageable size immediately to prevent MemoryError
+        target_width = 640
+        if frame.shape[1] > target_width:
+            aspect_ratio = frame.shape[1] / frame.shape[0]
+            target_height = int(target_width / aspect_ratio)
+            frame = cv2.resize(frame, (target_width, target_height), interpolation=cv2.INTER_AREA)
 
         # ---- Inference / tracking (use YAML if present) ----
         try:
@@ -253,6 +260,7 @@ class CameraManager:
 
         self.clients = set()  # ✅ NEW: WebSocket clients /ws/events clients
         self.count_clients = set()  # /ws/counts clients
+        self.frontend_count_clients = set()  # NEW: /ws/counts-list clients
         self.loop = asyncio.get_event_loop()
 
         # Event / tracker tuning
@@ -322,6 +330,12 @@ class CameraManager:
     def remove_count_client(self, ws):
         self.count_clients.discard(ws)
 
+    def add_frontend_count_client(self, ws):
+        self.frontend_count_clients.add(ws)
+
+    def remove_frontend_count_client(self, ws):
+        self.frontend_count_clients.discard(ws)
+
     def broadcast_event(self, event: dict):
         try:
             message = json.dumps(event, ensure_ascii=False)
@@ -361,6 +375,16 @@ class CameraManager:
                 to_remove.add(ws)
         for ws in to_remove:
             self.count_clients.remove(ws)
+
+    async def _broadcast_frontend_counts(self, message: str):
+        to_remove = set()
+        for ws in self.frontend_count_clients:
+            try:
+                await ws.send_text(message)
+            except Exception:
+                to_remove.add(ws)
+        for ws in to_remove:
+            self.frontend_count_clients.remove(ws)
 
     def start_camera(self, ip_address, label):
         if self.is_running(label):
@@ -474,8 +498,47 @@ class CameraManager:
                 for k, v in counts.items():
                     totals[k] = totals.get(k, 0) + int(v)
             payload = {"ts": ts, "per_camera": snapshot, "totals":totals}
+            # 1. API payload
+            api_payload = {"ts": ts, "per_camera": snapshot, "totals": totals}
             if self.count_clients:
-                self.broadcast_counts(payload)
+                try:
+                    message = json.dumps(api_payload, ensure_ascii=False)
+                    asyncio.run_coroutine_threadsafe(
+                        self._broadcast_counts(message), self.loop
+                    )
+                except Exception as e:
+                    print(f"[ERROR] Broadcasting API counts: {e}")
+
+            # 2. Frontend-friendly payload
+            per_camera_list = []
+            for cam, stats in snapshot.items():
+                cam_obj = {
+                    "camera": cam,
+                    # Use the frontend-friendly class names
+                    "box": stats.get("boxes", 0),
+                    "vehicle": stats.get("vehicles", 0),
+                    "people": stats.get("people", 0)
+                }
+                per_camera_list.append(cam_obj)
+
+            frontend_payload = {
+                "ts": ts,
+                "total": {
+                    "box": totals.get("boxes", 0),
+                    "vehicle": totals.get("vehicles", 0),
+                    "people": totals.get("people", 0)
+                },
+                "per_camera": per_camera_list
+            }
+
+            if self.frontend_count_clients:
+                try:
+                    message = json.dumps(frontend_payload, ensure_ascii=False)
+                    asyncio.run_coroutine_threadsafe(
+                        self._broadcast_frontend_counts(message), self.loop
+                    )
+                except Exception as e:
+                    print(f"[ERROR] Broadcasting frontend counts: {e}")
             time.sleep(interval)
 
     def _event_broadcaster(self):

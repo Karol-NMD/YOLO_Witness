@@ -78,6 +78,20 @@ async def websocket_counts(websocket: WebSocket):
         cameras.remove_count_client(websocket)
 
 
+@app.websocket("/ws/counts-list")
+async def websocket_counts_list(websocket: WebSocket):
+    """Live per-camera counts + totals publisher for the front end."""
+    await websocket.accept()
+    cameras.add_frontend_count_client(websocket)
+    try:
+        while True:
+            await asyncio.sleep(60)
+    except WebSocketDisconnect:
+        pass
+    finally:
+        cameras.remove_frontend_count_client(websocket)
+
+
 # ---------- MJPEG stream ----------
 @app.get("/stream/{label}")
 def video_feed(label: str):
