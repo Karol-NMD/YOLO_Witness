@@ -82,7 +82,7 @@ def camera_worker(
             print(f"[WORKER] Camera '{label}': Frame read failed or end of stream.")
             break
 
-        # ⚠️ NEW: Downscale the frame to a manageable size immediately to prevent MemoryError
+        # Downscale the frame to a manageable size immediately to prevent MemoryError
         target_width = 640
         if frame.shape[1] > target_width:
             aspect_ratio = frame.shape[1] / frame.shape[0]
@@ -491,15 +491,14 @@ class CameraManager:
         while self._running:
             snapshot = {}
             totals = {}
-            ts = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S")
+            ts_date, ts_time = _now_local_strs()
             # collect
             for label, counts in list(self.count_store.items()):
                 snapshot[label] = dict(counts)
                 for k, v in counts.items():
                     totals[k] = totals.get(k, 0) + int(v)
-            payload = {"ts": ts, "per_camera": snapshot, "totals":totals}
             # 1. API payload
-            api_payload = {"ts": ts, "per_camera": snapshot, "totals": totals}
+            api_payload = {"ts": {"date": ts_date, "time": ts_time}, "per_camera": snapshot, "totals": totals}
             if self.count_clients:
                 try:
                     message = json.dumps(api_payload, ensure_ascii=False)
@@ -522,7 +521,7 @@ class CameraManager:
                 per_camera_list.append(cam_obj)
 
             frontend_payload = {
-                "ts": ts,
+                "ts": {"date": ts_date, "time": ts_time},
                 "total": {
                     "box": totals.get("boxes", 0),
                     "vehicle": totals.get("vehicles", 0),
