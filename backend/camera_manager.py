@@ -35,6 +35,7 @@ def camera_worker(
     colors,
     last_frame_time,
     event_queue,
+    zones_store,
     conf_threshold=0.35,
     min_box_area=20 * 20,
     thumbnail_side=128,
@@ -114,6 +115,8 @@ def camera_worker(
         counts = {k: 0 for k in task_keys}
         active_ids = set()
 
+        zones_for_camera = zones_store.get(label, [])
+
         boxes = getattr(results, "boxes", None)
         if boxes is not None and len(boxes) > 0:
             xyxy = boxes.xyxy  # Nx4
@@ -140,13 +143,25 @@ def camera_worker(
                     continue
 
                 # bbox
-                x1, y1, x2, y2 = xyxy[i].tolist()
-                x1, y1, x2, y2 = map(int, map(round, (x1, y1, x2, y2)))
-                w = max(0, x2 - x1)
-                h = max(0, y2 - y1)
-                area = w * h
-                if area < min_box_area:
+                x1, y1, x2, y2 = map(int, map(round, xyxy[i].tolist()))
+                w, h = max(0, x2 - x1), max(0, y2 - y1)
+                if w * h < min_box_area:
                     continue
+
+                # --- ✅ Zone filtering (with fallback) ---
+                cx, cy = int((x1 + x2) / 2), int((y1 + y2) / 2)
+
+                if zones_for_camera:
+                    zone_id = None
+                    for zone in zones_for_camera:
+                        polygon = np.array(zone["points"], np.int32)
+                        if cv2.pointPolygonTest(polygon, (cx, cy), False) >= 0:
+                            zone_id = zone["id"]
+                            break
+                    if zone_id is None:
+                        continue  # skip detection outside all zones
+                else:
+                    zone_id = None
 
                 # bucket counts (first matching bucket wins)
                 for task, class_list in detection_classes.items():
@@ -191,6 +206,7 @@ def camera_worker(
                 base_evt = {
                     "type": cls_name,
                     "label": label,
+                    "zone_id": zone_id,
                     "track_id": int(tid),
                     "confidence": c,
                     "bbox": [int(x1), int(y1), int(x2), int(y2)],
@@ -254,6 +270,7 @@ class CameraManager:
         self.frame_store = manager.dict()
         self.last_frame_time = manager.dict()
         self.count_store = manager.dict()
+        self.zones = manager.dict()
 
         self.pending_disappears = manager.dict()
         self.event_queue = manager.Queue()  # NEW: Event transport queue
@@ -386,6 +403,13 @@ class CameraManager:
         for ws in to_remove:
             self.frontend_count_clients.remove(ws)
 
+    def set_zones(self, label: str, zones: list[dict]):
+        """Replace all zones for a camera."""
+        self.zones[label] = zones
+
+    def get_zones(self, label:str):
+        return self.zones.get(label, [])
+
     def start_camera(self, ip_address, label):
         if self.is_running(label):
             print(f"[INFO] Camera '{label}' is already running.")
@@ -401,6 +425,7 @@ class CameraManager:
             self.colors,
             self.last_frame_time,
             self.event_queue,
+            self.zones,
         ),)
         p.start()
         self.processes[label] = p

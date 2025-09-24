@@ -3,8 +3,8 @@ from fastapi import FastAPI, WebSocket, Query, HTTPException
 from starlette.websockets import WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from camera_manager import CameraManager
+from typing import Optional, List
 from pydantic import BaseModel
-from typing import Optional
 import multiprocessing
 import threading
 import asyncio
@@ -29,6 +29,11 @@ class CameraInput(BaseModel):
     label: str
 
 
+class ZoneInput(BaseModel):
+    id: str
+    points: List[List[int]]     # [[x1,y1], [x2,y2]]
+
+
 @app.post("/api/add_camera")
 def add_camera(camera: CameraInput):
     if not cameras.is_running(camera.label):
@@ -48,6 +53,12 @@ def stop_camera(label: str = Query(...)):
 def stop_all():
     cameras.stop_all()
     return {"status": "All cameras stopped."}
+
+
+@app.post("/api/set_zones")
+def set_zones(label: str, zones: List[ZoneInput]):
+    cameras.set_zones(label, [z.dict() for z in zones])
+    return {"status": "Zones updated", "label": label, "count": len(zones)}
 
 
 # ---------- WebSockets ----------
@@ -134,6 +145,11 @@ def export_pdf(
 
     headers = {"Content-Disposition": "attachment; filename=detections.pdf"}
     return Response(content=data, media_type="application/pdf", headers=headers)
+
+
+@app.get("/api/get_zones")
+def get_zones(label: str):
+    return {"label": label, "zones": cameras.get_zones(label)}
 
 
 @app.on_event("shutdown")
