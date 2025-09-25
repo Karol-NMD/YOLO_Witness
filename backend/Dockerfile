@@ -1,3 +1,6 @@
+# Use official Python image
+FROM python:3.11-slim
+
 # Install OpenCV dependencies
 RUN apt-get update && apt-get install -y \
     libgl1 \
