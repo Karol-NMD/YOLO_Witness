@@ -1,2 +1,0 @@
-# force headless, block GUI build
-opencv-python==99999999
