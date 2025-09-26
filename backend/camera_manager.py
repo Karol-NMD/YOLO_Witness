@@ -426,7 +426,7 @@ class CameraManager:
             self.last_frame_time,
             self.event_queue,
             self.zones,
-        ),daemon=True)
+        ),)
         p.start()
         self.processes[label] = p
 
@@ -456,7 +456,11 @@ class CameraManager:
             if proc.is_alive():
                 print(f"[INFO] Stopping camera '{label}'")
                 proc.terminate()
-                proc.join()
+                proc.join(timeout=5)
+                if proc.is_alive():
+                    print(f"[WARN] Camera '{label}' did not exit after terminate(). Forcing kill.")
+                    proc.kill()
+                    proc.join(timeout=2)
             del self.processes[label]
 
         # clear shared state
@@ -480,7 +484,11 @@ class CameraManager:
             print(f"[INFO] Terminating camera '{label}'")
             if process.is_alive():
                 process.terminate()
-                process.join()
+                process.join(timeout=5)
+                if process.is_alive():
+                    print(f"[WARN] Camera '{label}' did not exit after terminate(). Forcing kill.")
+                    process.kill()
+                    process.join(timeout=2)
         self.processes.clear()
         self.frame_store.clear()
         self.count_store.clear()
