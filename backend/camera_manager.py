@@ -285,7 +285,6 @@ class CameraManager:
 
         self.processes = {}
         self._running = True
-        self._proc_lock = threading.Lock()
 
         self.detection_classes = {
             'people': ['person'],
@@ -381,8 +380,7 @@ class CameraManager:
                 await ws.send_text(message)
             except Exception:
                 to_remove.add(ws)
-        for ws in to_remove:
-            self.clients.remove(ws)
+        self.clients -= to_remove
 
     async def _broadcast_counts(self, message: str):
         to_remove = set()
@@ -391,8 +389,7 @@ class CameraManager:
                 await ws.send_text(message)
             except Exception:
                 to_remove.add(ws)
-        for ws in to_remove:
-            self.count_clients.remove(ws)
+        self.count_clients -= to_remove
 
     async def _broadcast_frontend_counts(self, message: str):
         to_remove = set()
@@ -401,8 +398,7 @@ class CameraManager:
                 await ws.send_text(message)
             except Exception:
                 to_remove.add(ws)
-        for ws in to_remove:
-            self.frontend_count_clients.remove(ws)
+        self.frontend_count_clients -= to_remove
 
     def set_zones(self, label: str, zones: list[dict]):
         """Replace all zones for a camera."""
@@ -450,48 +446,35 @@ class CameraManager:
 
             yield boundary + frame_bytes + b"\r\n"
 
-    def stop_camera(self, label):
+    def stop_camera(self, label, join_timeout=5):
         # kill process
-        with self._proc_lock:
-            proc = self.processes.get(label)
-            if proc and proc.is_alive():
-                print(f"[INFO] Stopping camera '{label}'")
+        proc = self.processes.get(label)
+        if proc and proc.is_alive():
+            print(f"[INFO] Stopping camera '{label}'")
             proc.terminate()
-            proc.join(timeout=5)
+            proc.join(join_timeout)
             if proc.is_alive():
                 print(f"[WARN] Camera '{label}' did not exit after terminate(). Forcing kill.")
-            proc.kill()
-            proc.join(timeout=2)
+                proc.kill()
+                proc.join()
+        self.processes.pop(label, None)
+        self.frame_store.pop(label, None)
+        self.count_store.pop(label, None)
+        self.last_frame_time.pop(label, None)
+        for k in list(self.pending_disappears.keys()):
+            if k[0] == label:
+                self.pending_disappears.pop(k, None)
+        print(f"[INFO] Camera '{label}' stopped (cleanup done).")
 
-            self.processes.pop(label, None)
-            self.frame_store.pop(label, None)
-            self.count_store.pop(label, None)
-            self.last_frame_time.pop(label, None)
-
-            for k in list(self.pending_disappears.keys()):
-                if k[0] == label:
-                    self.pending_disappears.pop(k, None)
-
-            print(f"[INFO] Camera '{label}' stopped (cleanup done).")
-
-    def stop_all(self):
-        with self._proc_lock:
-            print(f"[INFO] Stopping all camera processes...")
-            for label, process in list(self.processes.items()):
-                if process.is_alive():
-                    print(f"[INFO] Terminating camera '{label}'")
-            process.terminate()
-            process.join(timeout=5)
-            if process.is_alive():
-                print(f"[WARN] Camera '{label}' did not exit after terminate(). Forcing kill.")
-            process.kill()
-            process.join(timeout=2)
-            self.processes.clear()
-            self.frame_store.clear()
-            self.count_store.clear()
-            self.last_frame_time.clear()
-            self.pending_disappears.clear()
-            print("[INFO] All cameras stopped.")
+    def stop_all(self, join_timeout=5):
+        print(f"[INFO] Stopping all camera processes...")
+        for label in list(self.processes.keys()):
+            self.stop_camera(label, join_timeout)
+        self.frame_store.clear()
+        self.count_store.clear()
+        self.last_frame_time.clear()
+        self.pending_disappears.clear()
+        print("[INFO] All cameras stopped.")
 
     def shutdown(self):
         print(f"[INFO] Shutting down CameraManager...")
@@ -572,23 +555,23 @@ class CameraManager:
 
     def _event_broadcaster(self):
         """
-                Central event fanout thread.
-                - Converts 'lost' → delayed 'disappear' (grace window).
-                - Cancels pending disappear on 'appear'/'update'.
-                - Broadcasts events to all WS clients.
-                - Logs detection instances to SQLite (by default: 'appear' only).
-                """
+        Central event fanout thread.
+        - Converts 'lost' → delayed 'disappear' (grace window).
+        - Cancels pending disappear on 'appear'/'update'.
+        - Broadcasts events to all WS clients.
+        - Logs detection instances to SQLite (by default: 'appear' only).
+        """
         print("[EVENT LOOP] Broadcaster started.")
         grace = float(self.disappear_grace_sec)
 
-        while self._running:
+        while self._running or not self.event_queue.empty():
             now = time.time()
 
             # 1) Flush due disappears
             try:
                 for key, deadline in list(self.pending_disappears.items()):
                     if now >= deadline:
-                        (label, tid) = key
+                        label, tid = key
                         date_s, time_s = _now_local_strs()
                         self.broadcast_event({
                             "event": "disappear",
@@ -597,50 +580,42 @@ class CameraManager:
                             "date": date_s,
                             "time": time_s,
                         })
-                        try:
-                            del self.pending_disappears[key]
-                        except Exception:
-                            pass
+                        self.pending_disappears.pop(key, None)
             except RuntimeError:
-                # dict size changed during iteration; retry next tick
-                pass
+                # dict changed size during iteration; ignore and retry next tick
+                continue
 
-            # 2) Drain queue (schedule/cancel/broadcast)
+            # 2) Drain queue safely
             try:
                 event = self.event_queue.get(timeout=0.2)
             except queue.Empty:
                 continue
             except Exception as e:
-                print(f"[ERROR] Event queue get(): {e}")
+                print(f"[WARN] Event queue error: {e}")
                 continue
 
             try:
                 evt_type = event.get("event")
+                label = event.get("label")
+                tid = int(event.get("track_id", -1))
+
                 if evt_type == "lost":
-                    lbl = event.get("label")
-                    tid = int(event.get("track_id"))
-                    self.pending_disappears[(lbl, tid)] = now + grace
-                    # Do NOT broadcast 'lost' itself
+                    self.pending_disappears[(label, tid)] = now + grace
                     continue
 
                 if evt_type in ("appear", "update"):
-                    # Cancel pending disappear if any
-                    lbl = event.get("label")
-                    tid = int(event.get("track_id"))
-                    self.pending_disappears.pop((lbl, tid), None)
+                    self.pending_disappears.pop((label, tid), None)
 
-                # Forward all other events (appear/update/explicit disappear)
+                # Forward event
                 self.broadcast_event(event)
 
-                # ----- DB logging policy -----
-                # Default: log only 'appear' rows (1 row per tracked object).
-                # Flip include_updates=True to also log every 'update'.
+                # DB logging
                 include_updates = False
                 if evt_type == "appear" or (include_updates and evt_type == "update"):
                     self._db_log(event)
 
             except Exception as e:
-                print(f"[ERROR] Broadcasting event: {e}")
+                print(f"[WARN] Broadcasting event: {e}")
 
     # ---------------- DB helpers & exports -----------------
     def _db_log(self, event: dict):
