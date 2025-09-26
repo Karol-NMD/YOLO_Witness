@@ -426,7 +426,7 @@ class CameraManager:
             self.last_frame_time,
             self.event_queue,
             self.zones,
-        ),)
+        ),daemon=True)
         p.start()
         self.processes[label] = p
 

@@ -1,5 +1,5 @@
-from fastapi import FastAPI, WebSocket, Query, HTTPException, BackgroundTasks
 from fastapi.responses import StreamingResponse, Response, PlainTextResponse
+from fastapi import FastAPI, WebSocket, Query, HTTPException
 from starlette.websockets import WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from camera_manager import CameraManager
@@ -47,18 +47,19 @@ def add_camera(camera: CameraInput):
 
 
 @app.post("/api/stop_camera")
-def stop_camera(label: str = Query(...), background_tasks: BackgroundTasks = None):
+def stop_camera(label: str = Query(...)):
     if not cameras.is_running(label):
         raise HTTPException(status_code=404, detail=f"Camera '{label}' is not running.")
 
-    # Schedule stop in the background
-    background_tasks.add_task(cameras.stop_camera, label)
+    # Run the stop in a separate daemon thread
+    threading.Thread(target=cameras.stop_camera, args=(label,), daemon=True).start()
     return {"status": f"Stop signal sent to camera '{label}'"}
 
 
 @app.post("/api/stop_all")
-def stop_all(background_tasks: BackgroundTasks):
-    background_tasks.add_task(cameras.stop_all)
+def stop_all():
+    # Run stop_all in a separate daemon thread
+    threading.Thread(target=cameras.stop_all, daemon=True).start()
     return {"status": "Stop signal sent to all cameras"}
 
 
