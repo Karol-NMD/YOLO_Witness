@@ -1,5 +1,5 @@
+from fastapi import FastAPI, WebSocket, Query, HTTPException, BackgroundTasks
 from fastapi.responses import StreamingResponse, Response, PlainTextResponse
-from fastapi import FastAPI, WebSocket, Query, HTTPException
 from starlette.websockets import WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from camera_manager import CameraManager
@@ -36,77 +36,83 @@ class ZoneInput(BaseModel):
 
 @app.post("/api/add_camera")
 def add_camera(camera: CameraInput):
-    if not cameras.is_running(camera.label):
+    if cameras.is_running(camera.label):
+        raise HTTPException(status_code=409, detail=f"Camera '{camera.label}' is already running.")
+    try:
         thread = threading.Thread(target=cameras.start_camera, args=(camera.ip_address, camera.label))
         thread.start()
-        return {"status": "Started"}
-    return {"status": "Already running"}
+        return {"status": "Started", "label": camera.label}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/api/stop_camera")
-def stop_camera(label: str = Query(...)):
-    cameras.stop_camera(label)
-    return {"status": f"Camera '{label}' stopped."}
+def stop_camera(label: str = Query(...), background_tasks: BackgroundTasks = None):
+    if not cameras.is_running(label):
+        raise HTTPException(status_code=404, detail=f"Camera '{label}' is not running.")
+
+    # Schedule stop in the background
+    background_tasks.add_task(cameras.stop_camera, label)
+    return {"status": f"Stop signal sent to camera '{label}'"}
 
 
 @app.post("/api/stop_all")
-def stop_all():
-    cameras.stop_all()
-    return {"status": "All cameras stopped."}
+def stop_all(background_tasks: BackgroundTasks):
+    background_tasks.add_task(cameras.stop_all)
+    return {"status": "Stop signal sent to all cameras"}
 
 
 @app.post("/api/set_zones")
 def set_zones(label: str, zones: List[ZoneInput]):
-    cameras.set_zones(label, [z.dict() for z in zones])
-    return {"status": "Zones updated", "label": label, "count": len(zones)}
+    try:
+        cameras.set_zones(label, [z.dict() for z in zones])
+        return {"status": "Zones updated", "label": label, "count": len(zones)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ---------- WebSockets ----------
-@app.websocket("/ws/events")
-async def websocket_endpoint(websocket: WebSocket):
+async def websocket_handler(websocket: WebSocket, client_add, client_remove):
     await websocket.accept()
-    cameras.add_client(websocket)
+    client_add(websocket)
     try:
         while True:
             await asyncio.sleep(60)
     except WebSocketDisconnect:
         pass
+    except Exception as e:
+        print(f"[WS] Error: {e}")
     finally:
-        cameras.remove_client(websocket)
+        client_remove(websocket)
+
+
+@app.websocket("/ws/events")
+async def websocket_events(websocket: WebSocket):
+    await websocket_handler(websocket, cameras.add_client, cameras.remove_client)
 
 
 @app.websocket("/ws/counts")
 async def websocket_counts(websocket: WebSocket):
-    """Live per-camera counts + totals publisher"""
-    await websocket.accept()
-    cameras.add_count_client(websocket)
-    try:
-        while True:
-            await asyncio.sleep(60)
-    except WebSocketDisconnect:
-        pass
-    finally:
-        cameras.remove_count_client(websocket)
+    await websocket_handler(websocket, cameras.add_count_client, cameras.remove_count_client)
 
 
 @app.websocket("/ws/counts-list")
 async def websocket_counts_list(websocket: WebSocket):
-    """Live per-camera counts + totals publisher for the front end."""
-    await websocket.accept()
-    cameras.add_frontend_count_client(websocket)
-    try:
-        while True:
-            await asyncio.sleep(60)
-    except WebSocketDisconnect:
-        pass
-    finally:
-        cameras.remove_frontend_count_client(websocket)
+    await websocket_handler(websocket, cameras.add_frontend_count_client, cameras.remove_frontend_count_client)
 
 
 # ---------- MJPEG stream ----------
 @app.get("/stream/{label}")
 def video_feed(label: str):
-    return StreamingResponse(cameras.generate_frames(label), media_type="multipart/x-mixed-replace; boundary=frame")
+    if not cameras.is_running(label):
+        raise HTTPException(status_code=404, detail=f"Camera '{label}' not running or stream unavailable.")
+    try:
+        return StreamingResponse(
+            cameras.generate_frames(label),
+            media_type="multipart/x-mixed-replace; boundary=frame"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ---------- Exports from SQLite ----------
