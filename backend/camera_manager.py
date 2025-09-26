@@ -285,6 +285,7 @@ class CameraManager:
 
         self.processes = {}
         self._running = True
+        self._proc_lock = threading.Lock()
 
         self.detection_classes = {
             'people': ['person'],
@@ -426,7 +427,7 @@ class CameraManager:
             self.last_frame_time,
             self.event_queue,
             self.zones,
-        ),)
+        ), daemon=True)
         p.start()
         self.processes[label] = p
 
@@ -451,50 +452,46 @@ class CameraManager:
 
     def stop_camera(self, label):
         # kill process
-        if label in self.processes:
-            proc = self.processes[label]
-            if proc.is_alive():
+        with self._proc_lock:
+            proc = self.processes.get(label)
+            if proc and proc.is_alive():
                 print(f"[INFO] Stopping camera '{label}'")
-                proc.terminate()
-                proc.join(timeout=5)
-                if proc.is_alive():
-                    print(f"[WARN] Camera '{label}' did not exit after terminate(). Forcing kill.")
-                    proc.kill()
-                    proc.join(timeout=2)
-            del self.processes[label]
+            proc.terminate()
+            proc.join(timeout=5)
+            if proc.is_alive():
+                print(f"[WARN] Camera '{label}' did not exit after terminate(). Forcing kill.")
+            proc.kill()
+            proc.join(timeout=2)
 
-        # clear shared state
-        self.frame_store.pop(label, None)
-        self.count_store.pop(label, None)
-        self.last_frame_time.pop(label, None)
+            self.processes.pop(label, None)
+            self.frame_store.pop(label, None)
+            self.count_store.pop(label, None)
+            self.last_frame_time.pop(label, None)
 
-        # remove pending disappear timers for this label
-        for k in list(self.pending_disappears.keys()):
-            if k[0] == label:
-                try:
-                    del self.pending_disappears[k]
-                except KeyError:
-                    pass
+            for k in list(self.pending_disappears.keys()):
+                if k[0] == label:
+                    self.pending_disappears.pop(k, None)
 
-        print(f"[INFO] Camera '{label}' stopped (cleanup done).")
+            print(f"[INFO] Camera '{label}' stopped (cleanup done).")
 
     def stop_all(self):
-        print(f"[INFO] Stopping all camera processes...")
-        for label, process in list(self.processes.items()):
-            print(f"[INFO] Terminating camera '{label}'")
-            if process.is_alive():
-                process.terminate()
-                process.join(timeout=5)
+        with self._proc_lock:
+            print(f"[INFO] Stopping all camera processes...")
+            for label, process in list(self.processes.items()):
                 if process.is_alive():
-                    print(f"[WARN] Camera '{label}' did not exit after terminate(). Forcing kill.")
-                    process.kill()
-                    process.join(timeout=2)
-        self.processes.clear()
-        self.frame_store.clear()
-        self.count_store.clear()
-        self.last_frame_time.clear()
-        self.pending_disappears.clear()
-        print("[INFO] All cameras stopped.")
+                    print(f"[INFO] Terminating camera '{label}'")
+            process.terminate()
+            process.join(timeout=5)
+            if process.is_alive():
+                print(f"[WARN] Camera '{label}' did not exit after terminate(). Forcing kill.")
+            process.kill()
+            process.join(timeout=2)
+            self.processes.clear()
+            self.frame_store.clear()
+            self.count_store.clear()
+            self.last_frame_time.clear()
+            self.pending_disappears.clear()
+            print("[INFO] All cameras stopped.")
 
     def shutdown(self):
         print(f"[INFO] Shutting down CameraManager...")
