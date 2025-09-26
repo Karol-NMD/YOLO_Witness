@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y \
 # Set the working directory
 WORKDIR /app
 
+# Copy your resources folder (models, YAMLs) into container
+COPY Ressources ./Ressources
+
 # Copy only requirements first (leverages Docker cache)
 COPY requirements.txt ./
 
