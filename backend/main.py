@@ -65,7 +65,11 @@ def add_camera(camera: CameraInput):
         raise HTTPException(status_code=500, detail="CameraManager not initialized yet.")
     
     logger.info(f"Received POST /api/add_camera: {camera.dict()}")
-    ip_or_file = resource_path(camera.ip_address)
+    ip_input = camera.ip_address
+    if ip_input.isdigit():
+        ip_or_file = ip_input
+    else:
+        ip_or_file = resource_path(ip_input)
 
     if cameras.is_running(camera.label):
         raise HTTPException(status_code=409, detail=f"Camera '{camera.label}' already running.")

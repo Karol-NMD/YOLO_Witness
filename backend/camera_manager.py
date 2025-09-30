@@ -48,8 +48,10 @@ def camera_worker(
     live_flush_grabs=2,     # for RTSP/USB live streams, drop up to N old frames each tick
 ):
     print(f"[WORKER] Camera '{label}' connecting to {ip_address}")
+    if isinstance(ip_address, str) and ip_address.isdigit():
+        ip_address = int(ip_address)  # treat "0" or "1" as webcam index
     cap = cv2.VideoCapture(ip_address)
-
+    
     # Smaller buffer for live streams helps keep latency low
     try:
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
@@ -420,9 +422,14 @@ class CameraManager:
             print(f"[INFO] Camera '{label}' is already running.")
             return
         
+        if isinstance(ip_address, str) and ip_address.strip().isdigit():
+            ip_address = int(ip_address.strip())  # treat "0" or "1" as webcam index
+
         logger.info(f"Starting camera '{label}' with IP/source: {ip_address}")
 
-        if os.path.isfile(ip_address):
+        if isinstance(ip_address, int):
+            print(f"[INFO] Starting camera process for '{label}' with local webcam index: {ip_address}")
+        elif os.path.isfile(ip_address):
             print(f"[INFO] Starting camera process for '{label}' with video file: {ip_address}")
         else:
             print(f"[INFO] Starting camera process for '{label}' with stream: {ip_address}")
