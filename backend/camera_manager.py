@@ -1,4 +1,6 @@
+from utils import resource_path
 from datetime import datetime
+from logger import get_logger
 import numpy as np
 import threading
 import asyncio
@@ -16,8 +18,11 @@ from multiprocessing import Manager, Process
 from ultralytics import YOLO
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-TRACKER_YAML = os.path.join(BASE_DIR, "Ressources", "bytetrack.yaml")
+TRACKER_YAML = resource_path("Ressources/bytetrack.yaml")
+YOLO_WEIGHTS = resource_path("Ressources/yolov8n.pt")
 DB_PATH = os.path.join(BASE_DIR, "detections.db")
+
+logger = get_logger()
 
 
 def _now_local_strs():
@@ -52,7 +57,7 @@ def camera_worker(
         pass
 
     # Model in Ressources/
-    model = YOLO(os.path.join("Ressources", "yolov8n.pt"))
+    model = YOLO(YOLO_WEIGHTS)
 
     try:
         _ = model.predict(np.zeros((imgsz, imgsz, 3), dtype=np.uint8), imgsz=imgsz, verbose=False)
@@ -266,6 +271,7 @@ def camera_worker(
 
 class CameraManager:
     def __init__(self):
+        logger.info("Initializing CameraManager...")
         manager = Manager()
         self.frame_store = manager.dict()
         self.last_frame_time = manager.dict()
@@ -331,6 +337,7 @@ class CameraManager:
         threading.Thread(target=self._event_broadcaster, daemon=True).start()
         threading.Thread(target=self._watchdog_loop, daemon=True).start()
         threading.Thread(target=self._counts_publisher, daemon=True).start()
+        logger.info("CameraManager threads started.")
 
     def is_running(self, label):
         return label in self.processes and self.processes[label].is_alive()
@@ -409,8 +416,16 @@ class CameraManager:
 
     def start_camera(self, ip_address, label):
         if self.is_running(label):
+            logger.warning(f"Camera '{label}' is already running.")
             print(f"[INFO] Camera '{label}' is already running.")
             return
+        
+        logger.info(f"Starting camera '{label}' with IP/source: {ip_address}")
+
+        if os.path.isfile(ip_address):
+            print(f"[INFO] Starting camera process for '{label}' with video file: {ip_address}")
+        else:
+            print(f"[INFO] Starting camera process for '{label}' with stream: {ip_address}")
 
         print(f"[INFO] Starting camera process for '{label}' at {ip_address}")
         p = Process(target=camera_worker, args=(
@@ -448,6 +463,7 @@ class CameraManager:
 
     def stop_camera(self, label, join_timeout=5):
         # kill process
+        logger.info(f"Stopping camera '{label}'")
         proc = self.processes.get(label)
         if proc and proc.is_alive():
             print(f"[INFO] Stopping camera '{label}'")
@@ -467,6 +483,7 @@ class CameraManager:
         print(f"[INFO] Camera '{label}' stopped (cleanup done).")
 
     def stop_all(self, join_timeout=5):
+        logger.info("Stopping all cameras...")
         print(f"[INFO] Stopping all camera processes...")
         for label in list(self.processes.keys()):
             self.stop_camera(label, join_timeout)
@@ -477,6 +494,7 @@ class CameraManager:
         print("[INFO] All cameras stopped.")
 
     def shutdown(self):
+        logger.info("Shutting down CameraManager...")
         print(f"[INFO] Shutting down CameraManager...")
         self._running = False
         self.stop_all()
@@ -485,6 +503,7 @@ class CameraManager:
                 self._db.close()
         except Exception:
             pass
+        logger.info("CameraManager shutdown complete.")
 
     def _watchdog_loop(self, timeout_sec=30):
         print(f"[WATCHDOG] Started. Timeout set to {timeout_sec} seconds.")
